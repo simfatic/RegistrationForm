@@ -1,0 +1,166 @@
+/*
+Registration/Login Form by html-form-guide.com
+You can customize all the aspects of the form in this style sheet
+*/
+
+#fg_membersite fieldset
+{
+   width: 230px;
+   padding:20px;
+   border:1px solid #ccc;
+-moz-border-radius: 10px;
+-webkit-border-radius: 10px;
+-khtml-border-radius: 10px;
+border-radius: 10px;   
+}
+
+#fg_membersite legend, #fg_membersite h2
+{
+   font-family : Arial, sans-serif;
+   font-size: 1.3em;
+   font-weight:bold;
+   color:#333;
+}
+
+#fg_membersite label
+{
+   font-family : Arial, sans-serif;
+   font-size:0.8em;
+   font-weight: bold;
+}
+
+#fg_membersite input[type="text"],#fg_membersite textarea,
+#fg_membersite input[type="password"]
+{
+  font-family : Arial, Verdana, sans-serif;
+  font-size: 0.8em;
+  line-height:140%;
+  color : #000; 
+  padding : 3px; 
+  border : 1px solid #999;
+    -moz-border-radius: 5px;
+    -webkit-border-radius: 5px;
+    -khtml-border-radius: 5px;
+    border-radius: 5px;
+
+}
+
+#fg_membersite input[type="text"],
+#fg_membersite input[type="password"]
+{
+  height:18px;
+  width:220px;
+}
+
+ #fg_membersite #scaptcha
+{
+  width:60px;
+  height:18px;
+}
+
+#fg_membersite input[type="submit"]
+{
+   width:100px;
+   height:30px;
+   padding-left:0px;
+}
+
+#fg_membersite textarea
+{
+  height:120px;
+  width:310px;
+}
+
+#fg_membersite input[type="text"]:focus,
+#fg_membersite textarea:focus
+{
+  color : #009;
+  border : 1px solid #990000;
+  background-color : #ffff99;
+  font-weight:bold;
+}
+
+#fg_membersite .container
+{
+   margin-top:8px;
+   margin-bottom: 10px;
+}
+
+#fg_membersite .error
+{
+   font-family: Verdana, Arial, sans-serif; 
+   font-size: 0.7em;
+   color: #900;
+   background-color : #ffff00;
+}
+
+#fg_membersite #register_password_errorloc
+{
+    clear:both;
+}
+
+#fg_membersite  fieldset#antispam
+{
+   padding:2px;
+   border-top:1px solid #EEE;
+   border-left:0;
+   border-right:0;
+   border-bottom:0;
+   width:350px;
+}
+
+#fg_membersite fieldset#antispam legend
+{
+   font-family : Arial, sans-serif;
+   font-size: 0.8em;
+   font-weight:bold;
+   color:#333;   
+}
+
+#fg_membersite .short_explanation
+{
+   font-family : Arial, sans-serif;
+   font-size: 0.6em;
+   color:#333;   
+}
+
+/* spam_trap: This input is hidden. This is here to trick the spam bots*/
+#fg_membersite .spmhidip
+{
+   display:none;
+   width:10px;
+   height:3px;
+}
+#fg_membersite #fg_crdiv
+{
+   font-family : Arial, sans-serif;
+   font-size: 0.3em;
+   opacity: .2;
+   -moz-opacity: .2;
+   filter: alpha(opacity=20);   
+}
+#fg_membersite  #fg_crdiv p
+{
+    display:none;
+}
+
+#fg_membersite_content li
+{
+font-family : Arial, sans-serif;
+padding-top:10px;
+padding-bottom:10px;
+}
+#fg_membersite_content
+{
+    font-family : Arial, sans-serif;
+    font-size: 0.9em;
+    line-height: 150%
+}
+
+#fg_membersite_content h2
+{
+   font-family : Arial, sans-serif;
+   font-size: 1.5em;
+   font-weight:bold;
+   color:#333;
+}
