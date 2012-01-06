@@ -1,28 +1,22 @@
-Simple Registration/Login code from html-form-guide.com
-====================================
-
-See the article here: [PHP registration form](http://www.html-form-guide.com/php-form/php-registration-form.html)
-
-
-http://www.html-form-guide.com/php-form/php-login-form.html
-
+Simple Registration/Login code in PHP
+=====================================
+Read more:[PHP registration form](http://www.html-form-guide.com/php-form/php-registration-form.html) [PHP login form](http://www.html-form-guide.com/php-form/php-login-form.html)
 
 ## Installation
 
 1. Edit the file membersite_config.php in the includes folder and
 update the configuration information (like your email address, Database login etc)
 
-*Note*: 
-========
-The script will create the table in the database when you submit the registration form
-the first time. 
+::'''Note'''
+:::The script will create the table in the database when you submit the registration form
+:::the first time. 
 
 2. Upload the entire 'source' folder  to your web site. 
 
 3. You can customize the forms and scripts as required.
 
 
-Files____
+## Files
 
 register.php 
     This script displays the registration form. When the user submits the form,
@@ -56,8 +50,6 @@ includes/formvalidator.php
     See:http://www.html-form-guide.com/php-form/php-form-validation.html
     
  
-License____
-This program is free software published under the terms of the GNU Lesser General Public License.
+## License
+This program is free software published under the terms of the GNU [Lesser General Public License](http://www.gnu.org/copyleft/lesser.html).
 You can freely use it on commercial or non-commercial websites. 
-
-
