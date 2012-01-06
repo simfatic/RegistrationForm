@@ -6,8 +6,8 @@ Read more:[PHP registration form](http://www.html-form-guide.com/php-form/php-re
 
 1. Edit the file `membersite_config.php` in the includes folder and update the configuration information (like your email address, Database login etc)
     **Note**
-> The script will create the table in the database when you submit the registration form
-> the first time. 
+    The script will create the table in the database when you submit the registration form the first time. 
+
 2. Upload the entire 'source' folder  to your web site. 
     
 3. You can customize the forms and scripts as required.
@@ -20,10 +20,10 @@ the script sends a confirmation email to the user. The registration is complete 
 the user clicks the confirmation link that they received in the email
 
 * confirmreg.php
-Confirms a user's email address. The user clicks the confirmation link that they receive at their email address and is send to this script. This script verifies the user and  marks the user as confirmed. The user can login only after he has confirmed himself.
+    Confirms a user's email address. The user clicks the confirmation link that they receive at their email address and is send to this script. This script verifies the user and  marks the user as confirmed. The user can login only after he has confirmed himself.
 
 * login.php
-The user can login through this login page. After successful login, the user is sent to the page login-home.php
+    The user can login through this login page. After successful login, the user is sent to the page login-home.php
     
 * access-controlled.php
 This is a sample accesscontrolled page. If the user is logged in, he can view this page. Else the user is 
