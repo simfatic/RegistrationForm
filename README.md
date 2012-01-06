@@ -15,11 +15,13 @@ Read more:[PHP registration form](http://www.html-form-guide.com/php-form/php-re
 ## Files
 
 * register.php 
-This script displays the registration form. When the user submits the form,
+
+    This script displays the registration form. When the user submits the form,
 the script sends a confirmation email to the user. The registration is complete only when
 the user clicks the confirmation link that they received in the email
 
 * confirmreg.php
+
     Confirms a user's email address. The user clicks the confirmation link that they receive at their email address and is send to this script. This script verifies the user and  marks the user as confirmed. The user can login only after he has confirmed himself.
 
 * login.php
