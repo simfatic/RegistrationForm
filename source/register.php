@@ -87,9 +87,7 @@ Uses the excellent form validation script from JavaScript-coder.com-->
 
 // ]]>
 </script>
-<div id='fg_crdiv'><p><a href='http://www.html-form-guide.com'
->HTML form guide - email forms, registration forms, form generators and more</a>.</p></div>
-</div>
+
 <!--
 Form Code End (see html-form-guide.com for more info.)
 -->

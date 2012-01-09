@@ -20,6 +20,8 @@ if(!$fgmembersite->CheckLogin())
 <h2>Home Page</h2>
 Welcome back <?= $fgmembersite->UserFullName(); ?>!
 
+<p><a href='change-pwd.php'>Change password</a></p>
+
 <p><a href='access-controlled.php'>A sample 'members-only' page</a></p>
 <br><br><br>
 <p><a href='logout.php'>Logout</a></p>

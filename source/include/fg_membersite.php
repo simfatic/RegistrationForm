@@ -135,7 +135,7 @@ class FGMembersite
         $username = trim($_POST['username']);
         $password = trim($_POST['password']);
         
-        session_start();
+        if(!isset($_SESSION)){ session_start(); }
         if(!$this->CheckLoginInDB($username,$password))
         {
             return false;
@@ -148,7 +148,7 @@ class FGMembersite
     
     function CheckLogin()
     {
-         session_start();
+         if(!isset($_SESSION)){ session_start(); }
 
          $sessionvar = $this->GetLoginSessionVar();
          
@@ -178,6 +178,108 @@ class FGMembersite
         $_SESSION[$sessionvar]=NULL;
         
         unset($_SESSION[$sessionvar]);
+    }
+    
+    function EmailResetPasswordLink()
+    {
+        if(empty($_POST['email']))
+        {
+            $this->HandleError("Email is empty!");
+            return false;
+        }
+        $user_rec = array();
+        if(false === $this->GetUserFromEmail($_POST['email'], $user_rec))
+        {
+            return false;
+        }
+        if(false === $this->SendResetPasswordLink($user_rec))
+        {
+            return false;
+        }
+        return true;
+    }
+    
+    function ResetPassword()
+    {
+        if(empty($_GET['email']))
+        {
+            $this->HandleError("Email is empty!");
+            return false;
+        }
+        if(empty($_GET['code']))
+        {
+            $this->HandleError("reset code is empty!");
+            return false;
+        }
+        $email = trim($_GET['email']);
+        $code = trim($_GET['code']);
+        
+        if($this->GetResetPasswordCode($email) != $code)
+        {
+            $this->HandleError("Bad reset code!");
+            return false;
+        }
+        
+        $user_rec = array();
+        if(!$this->GetUserFromEmail($email,$user_rec))
+        {
+            return false;
+        }
+        
+        $new_password = $this->ResetUserPasswordInDB($user_rec);
+        if(false === $new_password || empty($new_password))
+        {
+            $this->HandleError("Error updating new password");
+            return false;
+        }
+        
+        if(false == $this->SendNewPassword($user_rec,$new_password))
+        {
+            $this->HandleError("Error sending new password");
+            return false;
+        }
+        return true;
+    }
+    
+    function ChangePassword()
+    {
+        if(!$this->CheckLogin())
+        {
+            $this->HandleError("Not logged in!");
+            return false;
+        }
+        
+        if(empty($_POST['oldpwd']))
+        {
+            $this->HandleError("Old password is empty!");
+            return false;
+        }
+        if(empty($_POST['newpwd']))
+        {
+            $this->HandleError("New password is empty!");
+            return false;
+        }
+        
+        $user_rec = array();
+        if(!$this->GetUserFromEmail($this->UserEmail(),$user_rec))
+        {
+            return false;
+        }
+        
+        $pwd = trim($_POST['oldpwd']);
+        
+        if($user_rec['password'] != md5($pwd))
+        {
+            $this->HandleError("The old password does not match!");
+            return false;
+        }
+        $newpwd = trim($_POST['newpwd']);
+        
+        if(!$this->ChangePasswordInDB($user_rec, $newpwd))
+        {
+            return false;
+        }
+        return true;
     }
     
     //-------Public Helper functions -------------
@@ -304,6 +406,53 @@ class FGMembersite
         return true;
     }
     
+    function ResetUserPasswordInDB($user_rec)
+    {
+        $new_password = substr(md5(uniqid()),0,10);
+        
+        if(false == $this->ChangePasswordInDB($user_rec,$new_password))
+        {
+            return false;
+        }
+        return $new_password;
+    }
+    
+    function ChangePasswordInDB($user_rec, $newpwd)
+    {
+        $newpwd = $this->SanitizeForSQL($newpwd);
+        
+        $qry = "Update $this->tablename Set password='".md5($newpwd)."' Where  id_user=".$user_rec['id_user']."";
+        
+        if(!mysql_query( $qry ,$this->connection))
+        {
+            $this->HandleDBError("Error updating the password \nquery:$qry");
+            return false;
+        }     
+        return true;
+    }
+    
+    function GetUserFromEmail($email,&$user_rec)
+    {
+        if(!$this->DBLogin())
+        {
+            $this->HandleError("Database login failed!");
+            return false;
+        }   
+        $email = $this->SanitizeForSQL($email);
+        
+        $result = mysql_query("Select * from $this->tablename where email='$email'",$this->connection);  
+
+        if(!$result || mysql_num_rows($result) <= 0)
+        {
+            $this->HandleError("There is no user with email: $email");
+            return false;
+        }
+        $user_rec = mysql_fetch_assoc($result);
+
+        
+        return true;
+    }
+    
     function SendUserWelcomeEmail(&$user_rec)
     {
         $mailer = new PHPMailer();
@@ -357,6 +506,77 @@ class FGMembersite
         }
         return true;
     }
+    
+    function GetResetPasswordCode($email)
+    {
+       return substr(md5($email.$this->sitename.$this->rand_key),0,10);
+    }
+    
+    function SendResetPasswordLink($user_rec)
+    {
+        $email = $user_rec['email'];
+        
+        $mailer = new PHPMailer();
+        
+        $mailer->CharSet = 'utf-8';
+        
+        $mailer->AddAddress($email,$user_rec['name']);
+        
+        $mailer->Subject = "Your reset password request at ".$this->sitename;
+
+        $mailer->From = $this->GetFromAddress();
+        
+        $link = $this->GetAbsoluteURLFolder().
+                '/resetpwd.php?email='.
+                urlencode($email).'&code='.
+                urlencode($this->GetResetPasswordCode($email));
+
+        $mailer->Body ="Hello ".$user_rec['name']."\r\n\r\n".
+        "There was a request to reset your password at ".$this->sitename."\r\n".
+        "Please click the link below to complete the request: \r\n".$link."\r\n".
+        "Regards,\r\n".
+        "Webmaster\r\n".
+        $this->sitename;
+        
+        if(!$mailer->Send())
+        {
+            return false;
+        }
+        return true;
+    }
+    
+    function SendNewPassword($user_rec, $new_password)
+    {
+        $email = $user_rec['email'];
+        
+        $mailer = new PHPMailer();
+        
+        $mailer->CharSet = 'utf-8';
+        
+        $mailer->AddAddress($email,$user_rec['name']);
+        
+        $mailer->Subject = "Your new password for ".$this->sitename;
+
+        $mailer->From = $this->GetFromAddress();
+        
+        $mailer->Body ="Hello ".$user_rec['name']."\r\n\r\n".
+        "Your password is reset successfully. ".
+        "Here is your updated login:\r\n".
+        "username:".$user_rec['username']."\r\n".
+        "password:$new_password\r\n".
+        "\r\n".
+        "Login here: ".$this->GetAbsoluteURLFolder()."/login.php\r\n".
+        "\r\n".
+        "Regards,\r\n".
+        "Webmaster\r\n".
+        $this->sitename;
+        
+        if(!$mailer->Send())
+        {
+            return false;
+        }
+        return true;
+    }    
     
     function ValidateRegistrationSubmission()
     {

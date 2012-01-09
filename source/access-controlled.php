@@ -21,7 +21,10 @@ This page can be accessed after logging in only. To make more access controlled 
 copy paste the code between &lt;?php and ?&gt; to the page and name the page to be php.
 <p>
 Logged in as: <?= $fgmembersite->UserFullName() ?>
+</p>
 <p>
+<a href='login-home.php'>Home</a>
+</p>
 </div>
 </body>
 </html>
