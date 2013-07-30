@@ -14,7 +14,7 @@ if(isset($_POST['submitted']))
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-US" lang="en-US">
 <head>
     <meta http-equiv='Content-Type' content='text/html; charset=utf-8'/>
-    <title>Contact us</title>
+    <title>Register</title>
     <link rel="STYLESHEET" type="text/css" href="style/fg_membersite.css" />
     <script type='text/javascript' src='scripts/gen_validatorv31.js'></script>
     <link rel="STYLESHEET" type="text/css" href="style/pwdwidget.css" />

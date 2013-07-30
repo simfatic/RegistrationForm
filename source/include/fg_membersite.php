@@ -653,7 +653,16 @@ class FGMembersite
     function GetAbsoluteURLFolder()
     {
         $scriptFolder = (isset($_SERVER['HTTPS']) && ($_SERVER['HTTPS'] == 'on')) ? 'https://' : 'http://';
-        $scriptFolder .= $_SERVER['HTTP_HOST'] . dirname($_SERVER['REQUEST_URI']);
+
+        $urldir ='';
+        $pos = strrpos($_SERVER['REQUEST_URI'],'/');
+        if(false !==$pos)
+        {
+            $urldir = substr($_SERVER['REQUEST_URI'],0,$pos);
+        }
+
+        $scriptFolder .= $_SERVER['HTTP_HOST'].$urldir;
+
         return $scriptFolder;
     }
     
