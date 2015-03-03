@@ -13,14 +13,24 @@ $fgmembersite->SetAdminEmail('user11@user11.com');
 //hostname, user name, password, database name and table name
 //note that the script will create the table (for example, fgusers in this case)
 //by itself on submitting register.php for the first time
-$fgmembersite->InitDB(/*hostname*/'localhost',
+$fgmembersite->InitDB(/*hostname*/'p:localhost',
                       /*username*/'prasanth',
                       /*password*/'p',
                       /*database name*/'testdb',
-                      /*table name*/'fgusers3');
+                      /*table name*/'fgusers');
 
-//For better security. Get a random string from this link: http://tinyurl.com/randstr
-// and put it here
-$fgmembersite->SetRandomKey('qSRcVS6DrTzrPvr');
+//Do you want to require additional verification (password, and browser verification if using two-factor authentication) for account administration?
+$fgmembersite->EnablePasswordRequiredForAdministration(true);                      
+                      
+//Do you want to enable two-factor authentication mode?  
+$fgmembersite->EnableTwoFactorAuthenticationMode(true);
+
+//Do you want to enable client-side password hashing?  If you do this, you must also enable Two Factor Authentication
+$fgmembersite->EnableClientSidePasswordHashing(true);
+
+//Do you want to include support for recording billing operations?
+$fgmembersite->EnableTransactions(true);
+
+$fgmembersite->SetAcceptedCreditCards(array("visa", "discover", "amex", "mastercard"));
 
 ?>

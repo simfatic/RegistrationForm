@@ -40,10 +40,10 @@ if(isset($_POST['submitted']))
 
 <div><span class='error'><?php echo $fgmembersite->GetErrorMessage(); ?></span></div>
 <div class='container'>
-    <label for='oldpwd' >Old Password*:</label><br/>
+    <label for='pwd' >Old Password*:</label><br/>
     <div class='pwdwidgetdiv' id='oldpwddiv' ></div><br/>
     <noscript>
-    <input type='password' name='oldpwd' id='oldpwd' maxlength="50" />
+    <input type='password' name='pwd' id='pwd' maxlength="50" />
     </noscript>    
     <span id='changepwd_oldpwd_errorloc' class='error'></span>
 </div>
@@ -69,7 +69,7 @@ Uses the excellent form validation script from JavaScript-coder.com-->
 
 <script type='text/javascript'>
 // <![CDATA[
-    var pwdwidget = new PasswordWidget('oldpwddiv','oldpwd');
+    var pwdwidget = new PasswordWidget('oldpwddiv','pwd');
     pwdwidget.enableGenerate = false;
     pwdwidget.enableShowStrength=false;
     pwdwidget.enableShowStrengthStr =false;
@@ -83,7 +83,7 @@ Uses the excellent form validation script from JavaScript-coder.com-->
     frmvalidator.EnableOnPageErrorDisplay();
     frmvalidator.EnableMsgsTogether();
 
-    frmvalidator.addValidation("oldpwd","req","Please provide your old password");
+    frmvalidator.addValidation("pwd","req","Please provide your old password");
     
     frmvalidator.addValidation("newpwd","req","Please provide your new password");
 

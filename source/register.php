@@ -24,7 +24,7 @@ if(isset($_POST['submitted']))
 
 <!-- Form Code Start -->
 <div id='fg_membersite'>
-<form id='register' action='<?php echo $fgmembersite->GetSelfScript(); ?>' method='post' accept-charset='UTF-8'>
+<form id='register' name='register' action='<?php echo $fgmembersite->GetSelfScript(); ?>' method='post' accept-charset='UTF-8'>
 <fieldset >
 <legend>Register</legend>
 
@@ -35,35 +35,35 @@ if(isset($_POST['submitted']))
 
 <div><span class='error'><?php echo $fgmembersite->GetErrorMessage(); ?></span></div>
 <div class='container'>
-    <label for='name' >Your Full Name*: </label><br/>
-    <input type='text' name='name' id='name' value='<?php echo $fgmembersite->SafeDisplay('name') ?>' maxlength="50" /><br/>
+    <label for='name' >Your Full Name: </label><br/>
+    <input type='text' name='name' id='name' value='<?php echo $fgmembersite->SafeDisplay('name') ?>' maxlength="64" /><br/>
     <span id='register_name_errorloc' class='error'></span>
 </div>
 <div class='container'>
     <label for='email' >Email Address*:</label><br/>
-    <input type='text' name='email' id='email' value='<?php echo $fgmembersite->SafeDisplay('email') ?>' maxlength="50" /><br/>
+    <input type='text' name='email' id='email' value='<?php echo $fgmembersite->SafeDisplay('email') ?>' maxlength="64" /><br/>
     <span id='register_email_errorloc' class='error'></span>
 </div>
 <div class='container'>
     <label for='username' >UserName*:</label><br/>
-    <input type='text' name='username' id='username' value='<?php echo $fgmembersite->SafeDisplay('username') ?>' maxlength="50" /><br/>
+    <input type='text' name='username' id='username' value='<?php echo $fgmembersite->SafeDisplay('username') ?>' maxlength="64" /><br/>
     <span id='register_username_errorloc' class='error'></span>
 </div>
 <div class='container' style='height:80px;'>
     <label for='password' >Password*:</label><br/>
     <div class='pwdwidgetdiv' id='thepwddiv' ></div>
     <noscript>
-    <input type='password' name='password' id='password' maxlength="50" />
+    <input type='password' name='password' id='password'/>
     </noscript>    
     <div id='register_password_errorloc' class='error' style='clear:both'></div>
 </div>
-
+</form>
 <div class='container'>
     <input type='submit' name='Submit' value='Submit' />
 </div>
 
 </fieldset>
-</form>
+
 <!-- client-side Form Validations:
 Uses the excellent form validation script from JavaScript-coder.com-->
 
@@ -75,7 +75,6 @@ Uses the excellent form validation script from JavaScript-coder.com-->
     var frmvalidator  = new Validator("register");
     frmvalidator.EnableOnPageErrorDisplay();
     frmvalidator.EnableMsgsTogether();
-    frmvalidator.addValidation("name","req","Please provide your name");
 
     frmvalidator.addValidation("email","req","Please provide your email address");
 
@@ -84,6 +83,19 @@ Uses the excellent form validation script from JavaScript-coder.com-->
     frmvalidator.addValidation("username","req","Please provide a username");
     
     frmvalidator.addValidation("password","req","Please provide a password");
+    
+    var salt = '<?php echo bin2hex(mcrypt_create_iv(16, MCRYPT_DEV_URANDOM));?>';
+    
+    function submit() {
+    <?php
+        if($fgmembersite->clientSidePasswordHashing)
+        {?>
+            document.forms['register'].salt.value = salt;
+            document.forms['register'].password.value = CryptoJS.PBKDF2(document.getElementById("password").value, salt, { keySize: 160/32, iterations: 1000 }).toString();
+        <?php }
+    ?>
+        document.forms['register'].submit();
+    }
 
 // ]]>
 </script>

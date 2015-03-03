@@ -3,10 +3,32 @@ require_once("./include/membersite_config.php");
 
 if(isset($_GET['code']))
 {
-   if($fgmembersite->ConfirmUser())
-   {
-        $fgmembersite->RedirectToURL("thank-you-regd.html");
-   }
+    if($fgmembersite->twoFactorAuthenticationMode)
+    {
+       if($fgmembersite->ConfirmUser())
+       {
+            $fgmembersite->RedirectToURL("thank-you-regd.html");
+       }
+    } else {   
+       $returning = $fgmembersite->ConfirmBrowser();
+       if(!(false === $returning))
+       {
+            if (isset($_COOKIE["BrowserValidation".$returning['username']])) {
+                    unset($_COOKIE["BrowserValidation".$returning['username']]);
+            }
+            $cookieName = "BrowserValidation".$returning['username'];
+            setcookie(
+              $cookieName,
+              $returning['code'],
+              time() + (365 * 24 * 60 * 60),
+              '/',
+              '',
+              true,
+              true
+            );
+            $fgmembersite->RedirectToURL("thank-you-regd.html");
+       }
+    }
 }
 
 ?>
