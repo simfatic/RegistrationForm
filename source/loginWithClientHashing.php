@@ -13,6 +13,9 @@ if(isset($_POST['submitted']))
    }
 }
 
+// get the CSRF token so we are ready to make authenticated requests
+$CSRFtoken = $_SESSION['CSRFtoken'];
+
 ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-US" lang="en-US">
@@ -137,6 +140,11 @@ if(isset($_POST['submitted']))
         submitted.setAttribute('type',"text");
         submitted.setAttribute('name',"submitted");
         submitted.setAttribute('value','true');
+        
+        var username = document.createElement("input");
+                username.setAttribute('type',"text");
+                username.setAttribute('name',"CSRFtoken");
+                username.setAttribute('value', <?php echo $CSRFtoken ?>;
 
         form.appendChild(username);
         form.appendChild(password);

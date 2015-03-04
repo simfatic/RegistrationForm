@@ -616,6 +616,11 @@ class FGMembersite {
             session_start(); 
             session_set_cookie_params(3600,'/','youtold.me',true,true); // make it expire after 1 hour
         }
+        
+        if (!isset($_SESSION['CSRFtoken'])) {
+            $token = hash("sha512",mt_rand(0,mt_getrandmax()));
+            $_SESSION['CSRFtoken'] = $token;
+        }
          
         if(empty($_SESSION['username']))
         {
@@ -637,11 +642,6 @@ class FGMembersite {
             /* session started more than 30 minutes ago*/
             session_regenerate_id(true); // change session ID for the current session and invalidate old session ID
             $_SESSION['CREATED'] = time(); // update creation time
-        }
-        
-        if (!isset($_SESSION['CSRFtoken'])) {
-            $token = hash("sha512",mt_rand(0,mt_getrandmax()));
-            $_SESSION['CSRFtoken'] = $token;
         }
         
         return true;
