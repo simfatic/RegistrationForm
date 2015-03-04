@@ -26,13 +26,13 @@ $fgmembersite->SetRandomKey(md5($today[year].$today[yday]));
 $fgmembersite->EnablePasswordRequiredForAdministration(true);                      
                       
 //Do you want to enable two-factor authentication mode?  
-$fgmembersite->EnableTwoFactorAuthenticationMode(true);
+$fgmembersite->EnableTwoFactorAuthenticationMode(false);
 
 //Do you want to enable client-side password hashing?  If you do this, you must also enable Two Factor Authentication
-$fgmembersite->EnableClientSidePasswordHashing(true);
+$fgmembersite->EnableClientSidePasswordHashing(false);
 
 //Do you want to include support for recording billing operations?
-$fgmembersite->EnableTransactions(true);
+$fgmembersite->EnableTransactions(false);
 
 $fgmembersite->SetAcceptedCreditCards(array("visa", "discover", "amex", "mastercard"));
 
