@@ -19,6 +19,9 @@ $fgmembersite->InitDB(/*hostname*/'p:localhost',
                       /*database name*/'testdb',
                       /*table name*/'fgusers');
 
+$today = getdate();                      
+$fgmembersite->SetRandomKey(md5($today[year].$today[yday]));                      
+                      
 //Do you want to require additional verification (password, and browser verification if using two-factor authentication) for account administration?
 $fgmembersite->EnablePasswordRequiredForAdministration(true);                      
                       

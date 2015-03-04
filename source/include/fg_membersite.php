@@ -14,12 +14,13 @@ http://www.html-form-guide.com/php-form/php-registration-form.html http://www.ht
         0.1 Defining Global Variables
         0.2 Setting Global Variables
             0.2.1 FGMembersite()
-            0.2.2 InitDB($host,$uname,$pwd,$database)
-            0.2.3 SetAdminEmail($email)
-            0.2.4 SetWebsiteName($sitename)
-            0.2.5 EnableTwoFactorAuthenticationMode($do)
-            0.2.6 EnableClientSidePasswordHashing($do)
-            0.2.7 EnableTransactions($do)
+            0.2.2 SetRandomKey($randkey)
+            0.2.3 InitDB($host,$uname,$pwd,$database)
+            0.2.4 SetAdminEmail($email)
+            0.2.5 SetWebsiteName($sitename)
+            0.2.6 EnableTwoFactorAuthenticationMode($do)
+            0.2.7 EnableClientSidePasswordHashing($do)
+            0.2.8 EnableTransactions($do)
     1 Main Operations
         1.1 Registering a User
             1.1.1 RegisterUser()
@@ -143,8 +144,12 @@ class FGMembersite {
     // 0.2 Setting Global Variables
     function FGMembersite()
     {
-        $this->rand_key = bin2hex(mcrypt_create_iv(32, MCRYPT_DEV_URANDOM));
         $this->newIterations = 100000;
+    }
+    
+    function SetRandomKey($randkey)
+    {
+        $this->rand_key = $randkey;
     }
     
     function InitDB($host,$uname,$pwd,$database)
