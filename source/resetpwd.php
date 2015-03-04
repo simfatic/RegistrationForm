@@ -40,7 +40,7 @@ if(isset($_POST['submitted']))
 		<form name="resetpwd" id="resetpwd" action='<?php echo $fgmembersite->GetSelfScript(); ?>' method='post'>
 		<div class='container'>
 		    <label for='password' >New Password:</label>
-		    <input type='password' name='password' id='password'/>
+		    <input type='password' name='password' id='password' onkeydown="handlePassword(event)"/>
 		    <div id='register_password_errorloc' class='error' style='clear:both'></div>
 		</div>
 		<div style="display:none;">
@@ -71,12 +71,12 @@ if(isset($_POST['submitted']))
 </div>
 
 <script>
-    var salt = '<?php echo bin2hex(mcrypt_create_iv(16, MCRYPT_DEV_URANDOM));?>';
 
     function submit() {
     <?php
         if($fgmembersite->clientSidePasswordHashing)
         {?>
+            salt = '<?php echo bin2hex(mcrypt_create_iv(16, MCRYPT_DEV_URANDOM));?>';
             document.forms['resetpwd'].salt.value = salt;
             document.forms['resetpwd'].password.value = CryptoJS.PBKDF2(document.getElementById("password").value, salt, { keySize: 160/32, iterations: 1000 }).toString();
         <?php }
@@ -84,9 +84,9 @@ if(isset($_POST['submitted']))
         document.forms['resetpwd'].submit();
     }
 
-    function handleConfirm(event){
+    function handlePassword(event){
         if(event.keyCode == 13) {
-                submit();
+            submit();
         }
     }	
 

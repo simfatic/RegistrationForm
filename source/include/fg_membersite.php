@@ -38,7 +38,8 @@ http://www.html-form-guide.com/php-form/php-registration-form.html http://www.ht
             1.2.5 SendAdminIntimationOnRegComplete($email)
         1.3 Logging on a User
             1.3.1 Login()
-            1.3.3 CheckLogin()
+            1.3.2 CheckLogin()
+            1.3.3 ConfirmCSRFToken()
         1.4 Logging out a user
             1.4.1 LogOut()
         1.5 Getting Session Variables // Likely unused, they're in $_SESSION after all 
@@ -638,7 +639,21 @@ class FGMembersite {
             $_SESSION['CREATED'] = time(); // update creation time
         }
         
+        if (!isset($_SESSION['CSRFtoken'])) {
+            $token = hash("sha512",mt_rand(0,mt_getrandmax()));
+            $_SESSION['CSRFtoken'] = $token;
+        }
+        
         return true;
+    }
+    
+    function ConfirmCSRFToken() {
+        if (($_SESSION['CSRFtoken'] == SanitizeHex($_POST['CSRFtoken']) || $_SESSION['CSRFtoken'] == SanitizeHex($_GET['CSRFtoken']))) {
+            return true;
+        } else {
+            $this->HandleError("Could not confirm Cross-Site Request Forgery token. Access denied.");
+            return false;
+        }
     }
     
     // End Logging on a User
@@ -839,6 +854,10 @@ class FGMembersite {
                 $this->HandleError("The old password did not validate!");
                 return false;
             }
+        } else {
+            if (!$this->ConfirmCSRFToken()) {
+                return false;
+            }
         }
         
         $newpwd = $_POST['newpwd'];
@@ -885,6 +904,10 @@ class FGMembersite {
                 $this->HandleError("The password provided did not validate!");
                 return false;
             }
+        } else {
+            if (!$this->ConfirmCSRFToken()) {
+                return false;
+            }
         }
         
         $newemail = SanitizeEmail(trim($_POST['newemail']));
@@ -925,6 +948,10 @@ class FGMembersite {
         if ($this->passwordRequiredForAdministration) {
             if (!$this->CheckLoginInDB(SanitizeUsername($_SESSION['username']), $_POST['pwd'], SanitizeHex($BVvalue))) {
                 $this->HandleError("The password provided did not validate!");
+                return false;
+            }
+        } else {
+            if (!$this->ConfirmCSRFToken()) {
                 return false;
             }
         }
@@ -1762,6 +1789,11 @@ class FGMembersite {
     
     function CheckLoginInDB($username,$password,$browserverification)
     {
+        if (!($_SESSION['CSRFtoken'] == SanitizeHex($_POST['CSRFtoken']) || $_SESSION['CSRFtoken'] == SanitizeHex($_GET['CSRFtoken']))) {
+            $this->HandleError("Could not confirm Cross-Site Request Forgery token. Access denied.");
+            return false;
+        }
+        
         $connection = $this->DBLogin();
         if(!$connection)
         {

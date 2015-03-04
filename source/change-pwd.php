@@ -15,6 +15,9 @@ if(isset($_POST['submitted']))
    }
 }
 
+// get the CSRF token so we are ready to make authenticated requests
+$CSRFtoken = $_SESSION['CSRFtoken'];
+
 ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-US" lang="en-US">
@@ -25,6 +28,8 @@ if(isset($_POST['submitted']))
       <script type='text/javascript' src='scripts/gen_validatorv31.js'></script>
       <link rel="STYLESHEET" type="text/css" href="style/pwdwidget.css" />
       <script src="scripts/pwdwidget.js" type="text/javascript"></script>       
+      <script type='text/javascript' src='scripts/pbkdf2.js'></script>
+      <script type='text/javascript' src='scripts/enc-utf16-min.js'></script>
 </head>
 <body>
 
@@ -43,7 +48,7 @@ if(isset($_POST['submitted']))
     <label for='pwd' >Old Password*:</label><br/>
     <div class='pwdwidgetdiv' id='oldpwddiv' ></div><br/>
     <noscript>
-    <input type='password' name='pwd' id='pwd' maxlength="50" />
+    <input type='password' name='pwd' id='pwd' maxlength="80" />
     </noscript>    
     <span id='changepwd_oldpwd_errorloc' class='error'></span>
 </div>
@@ -52,14 +57,16 @@ if(isset($_POST['submitted']))
     <label for='newpwd' >New Password*:</label><br/>
     <div class='pwdwidgetdiv' id='newpwddiv' ></div>
     <noscript>
-    <input type='password' name='newpwd' id='newpwd' maxlength="50" /><br/>
+    <input type='password' name='newpwd' id='newpwd' onkeydown="handlePassword(event)"/><br/>
     </noscript>
     <span id='changepwd_newpwd_errorloc' class='error'></span>
 </div>
 
+<input type='hidden' name='CSRFtoken' value='<?php echo $CSRFtoken ?>' />
+
 <br/><br/><br/>
 <div class='container'>
-    <input type='submit' name='Submit' value='Submit' />
+    <div class="submit" id="submit" name='Submit' onclick="submit();">Submit</div>
 </div>
 
 </fieldset>
@@ -86,6 +93,24 @@ Uses the excellent form validation script from JavaScript-coder.com-->
     frmvalidator.addValidation("pwd","req","Please provide your old password");
     
     frmvalidator.addValidation("newpwd","req","Please provide your new password");
+    
+    function submit() {
+    <?php
+        if($fgmembersite->clientSidePasswordHashing)
+        {?>
+            salt = '<?php echo bin2hex(mcrypt_create_iv(16, MCRYPT_DEV_URANDOM));?>';
+            document.forms['changepwd'].salt.value = salt;
+            document.forms['changepwd'].password.value = CryptoJS.PBKDF2(document.getElementById("password").value, salt, { keySize: 160/32, iterations: 1000 }).toString();
+        <?php }
+    ?>
+        document.forms['changepwd'].submit();
+    }
+    
+    function handlePassword(event){
+        if(event.keyCode == 13) {
+            submit();
+        }
+    }	
 
 // ]]>
 </script>

@@ -53,7 +53,7 @@ if(isset($_POST['submitted']))
     <label for='password' >Password*:</label><br/>
     <div class='pwdwidgetdiv' id='thepwddiv' ></div>
     <noscript>
-    <input type='password' name='password' id='password'/>
+    <input type='password' name='password' id='password'  onkeydown="handlePassword(event)"/>
     </noscript>    
     <div id='register_password_errorloc' class='error' style='clear:both'></div>
 </div>
@@ -96,6 +96,12 @@ Uses the excellent form validation script from JavaScript-coder.com-->
     ?>
         document.forms['register'].submit();
     }
+    
+    function handlePassword(event){
+        if(event.keyCode == 13) {
+            submit();
+        }
+    }	
 
 // ]]>
 </script>
