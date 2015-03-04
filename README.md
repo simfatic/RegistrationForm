@@ -14,7 +14,7 @@ Read more:[PHP registration form](http://www.html-form-guide.com/php-form/php-re
 
 4. Ensure you have installed the mcrypt and mysqli extensions (sometimes in in mysqlnd)
 
-5. If you are going to use two-factor authentication you are better off if you install browscap.ini: http://browscap.org/
+5. If you are going to use two-factor authentication you are better off if you install browscap.ini: http://php.net/browscap
 
 6. For a secure site there is much more than simply using a good PHP codebase. Configuration of your webserver and PHP itself are also critical steps you must take. Review the configuration recommendations here for some starting points. OWASP is a good source for additional advice, they were the primary source consulted for the creation of this security-mindful PHP member site.
 
