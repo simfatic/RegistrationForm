@@ -1,0 +1,13 @@
+
+Header set Strict-Transport-Security "max-age=16070400; includeSubDomains"
+Header set X-Frame-Options "deny"
+Header set X-XSS-Protection "1; mode=block"
+Header set X-Content-Type-Options "nosniff"
+# Here we are allowing scripts and iframe content to be loaded from YouTube. If you do not trust youtube, remove them. If you want the same functionality for some other domain, substitute it for the 2 YouTube URLs here
+Header set Content-Security-Policy "default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' https://s.ytimg.com; img-src 'self' data:; frame-src 'self' https://www.youtube.com;"
+
+SSLProtocol all -SSLv2 -SSLv3
+
+# There are many factors that may limit your use of this SSLCipherSuite. Use Qualys SSLlabs to check your configuration whether you use this or not: https://www.ssllabs.com/ssltest/
+SSLCipherSuite EDH+AES256:-SHA1:ECDH+AES256:EDH+AES256:-SHA1:ECDH+RSA+AES128+SHA256:EDH+AES:ECDH+AES:DHE+RSA+AES128+SHA:DHE-RSA-AES128-SHA:AES256+SHA256:AES256+SHA:AES128+SHA:!aNULL:!eNULL:!EXP:!LOW:!MD5
+SSLHonorCipherOrder on
