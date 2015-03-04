@@ -141,14 +141,15 @@ $CSRFtoken = $_SESSION['CSRFtoken'];
         submitted.setAttribute('name',"submitted");
         submitted.setAttribute('value','true');
         
-        var username = document.createElement("input");
-                username.setAttribute('type',"text");
-                username.setAttribute('name',"CSRFtoken");
-                username.setAttribute('value', <?php echo $CSRFtoken ?>;
+        var CSRFtoken = document.createElement("input");
+        CSRFtoken.setAttribute('type',"text");
+        CSRFtoken.setAttribute('name',"CSRFtoken");
+        CSRFtoken.setAttribute('value', '<?php echo $CSRFtoken ?>');
 
         form.appendChild(username);
         form.appendChild(password);
         form.appendChild(submitted);
+        form.appendChild(CSRFtoken);
         form.style.display = 'none';
 
         document.getElementsByTagName('body')[0].appendChild(form);
