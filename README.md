@@ -12,6 +12,20 @@ Read more:[PHP registration form](http://www.html-form-guide.com/php-form/php-re
     
 3. You can customize the forms and scripts as required.
 
+4. Ensure you have installed the mcrypt and mysqli extensions (sometimes in in mysqlnd)
+
+5. If you are going to use two-factor authentication you are better off if you install browscap.ini: http://browscap.org/
+
+6. For a secure site there is much more than simply using a good PHP codebase. Configuration of your webserver and PHP itself are also critical steps you must take. Review the configuration recommendations here for some starting points. OWASP is a good source for additional advice, they were the primary source consulted for the creation of this security-mindful PHP member site.
+
+## Security Notes
+
+This PHP Membersite has been reconstructed with stronger security methods throughout. It is now capable of being used in an environment with mitigation for all of OWASP's Top 10 (https://www.owasp.org/index.php/Category:OWASP_Top_Ten_Project).
+
+THIS DOES NOT MEAN THAT BECAUSE YOU USE THIS CODE YOU ARE PROTECTED!
+
+Much of the recommendations extend beyond what can be accomplished solely within a PHP application. You must properly build and configure your site to achieve security! This is only a starting point!
+
 ## Files
 
 * register.php 
