@@ -194,7 +194,8 @@ $CSRFtoken = $_SESSION['CSRFtoken'];
         target.appendChild(spinner.el);
     }
 
-window.scrollTo(0,0);
+    window.scrollTo(0,0);
+    
 </script>
 </div>
 <!--

@@ -702,17 +702,20 @@ class FGMembersite {
         $email = SanitizeEmail($_POST['email']);
         $username = $this->GetUsernameFromEmail($email);
         
+        // If there is no user with this email address act like the reset was successful. This way we do not reveal any information unncessarily.
         if(false === $username)
         {
             return true;
         }
         
         if(!$this->ChangeConfirmCodeInDB($email)) {
+            $this->HandleError("Sorry, something went wrong on our end.");
             return false;
         }
         
-        if(false === $this->SendResetPasswordLink($email, $username, $confirmcode))
+        if(!$this->SendResetPasswordLink($email, $username, $confirmcode))
         {
+            $this->HandleError("Sorry, something went wrong on our end.");
             return false;
         }
         
@@ -1001,7 +1004,7 @@ class FGMembersite {
     {
         if(empty($_POST[$value_name]))
         {
-            return'';
+            return '';
         }
         
         return htmlentities($_POST[$value_name]);
