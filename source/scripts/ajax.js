@@ -14,7 +14,7 @@
 				if (xmlhttp.status == 200) {
 					callback(xmlhttp.responseText, xmlhttp.status);
 				} else if (xmlhttp.status == 401 || xmlhttp.status == 302) {
-					window.location.replace("https://www.youtold.me/login.php");
+					window.location.replace("/login.php");
 				} else {
 					callback(xmlhttp.responseText, xmlhttp.status);
 				}
@@ -44,7 +44,7 @@
                                 if (xmlhttp.status == 200) {
                                         callback(xmlhttp.responseText, xmlhttp.status);
                                 } else if (xmlhttp.status == 401 || xmlhttp.status == 302) {
-                                        window.location.replace("https://www.youtold.me/login.php");
+                                        window.location.replace("/login.php");
                                 } else {
                                         callback(xmlhttp.responseText, xmlhttp.status);
                                 }

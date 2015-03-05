@@ -441,7 +441,7 @@ class FGMembersite {
         "$confirm_url\r\n".
         "You MUST open this link in the browser you wish to register.\r\n".
         "If you are opening this email on a different computer than you wish to register, go to this address and type the code in manually:\r\n".
-        "https://www.youtold.me/confirmreg.php and fill in ".$confirmcode."\r\n".
+        $this->sitename."/confirmreg.php and fill in ".$confirmcode."\r\n".
         "\r\n".
         "Regards,\r\n".
         "Webmaster\r\n".
@@ -578,7 +578,7 @@ class FGMembersite {
         
         if(!isset($_SESSION)) {
             session_start();
-            session_set_cookie_params(3600,'/','youtold.me',true,true); // make it expire after 1 hour
+            session_set_cookie_params(3600,'/','',true,true); // make it expire after 1 hour
         }
         
         if ($this->twoFactorAuthMode) {
@@ -614,7 +614,7 @@ class FGMembersite {
     {
         if(!isset($_SESSION)){ 
             session_start(); 
-            session_set_cookie_params(3600,'/','youtold.me',true,true); // make it expire after 1 hour
+            session_set_cookie_params(3600,'/','',true,true); // make it expire after 1 hour
         }
         
         if (!isset($_SESSION['CSRFtoken'])) {

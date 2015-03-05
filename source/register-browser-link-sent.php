@@ -8,7 +8,7 @@
         <!-- Basic Page Needs
   ================================================== -->
         <meta charset="utf-8">
-        <title>Welcome to YouToldMe</title>
+        <title>Sent a link for registering your Browser</title>
         <meta name="description" content="Store and preserve evidence for the little guy.">
         <meta name="author" content="">
 
@@ -41,7 +41,7 @@
 		<h2>Email for Browser Registration Sent</h2>
 		<p>If your email address is associated with an account, an email has been sent to your email address with the link to register your browser.<br>
 		You will want to open this link in the browser you are registering; otherwise read the message carefully.
-		If you are going to enter the code manually, <a href="https://www.youtold.me/confirmreg.php">you can click here.</a></p>
+		If you are going to enter the code manually, <a href="/confirmreg.php">you can click here.</a></p>
 	</div>
  </div><!-- container -->
 
