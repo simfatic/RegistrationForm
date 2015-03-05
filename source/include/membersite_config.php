@@ -16,8 +16,7 @@ $fgmembersite->SetAdminEmail('user11@user11.com');
 $fgmembersite->InitDB(/*hostname*/'p:localhost',
                       /*username*/'prasanth',
                       /*password*/'p',
-                      /*database name*/'testdb',
-                      /*table name*/'fgusers');
+                      /*database name*/'testdb');
 
 $today = getdate();                      
 $fgmembersite->SetRandomKey(md5($today[year].$today[yday]));                      
