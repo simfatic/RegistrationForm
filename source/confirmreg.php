@@ -3,7 +3,7 @@ require_once("./include/membersite_config.php");
 
 if(isset($_GET['code']))
 {
-    if($fgmembersite->twoFactorAuthenticationMode)
+    if(!$fgmembersite->twoFactorAuthenticationMode)
     {
        if($fgmembersite->ConfirmUser())
        {
