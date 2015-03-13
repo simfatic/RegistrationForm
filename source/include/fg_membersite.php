@@ -130,9 +130,13 @@ class FGMembersite {
     
     var $newIterations;
     
+    var $sessionLifeTime;
+    
     var $error_message;
     
     var $passwordRequiredForAdministration;
+    
+    var $CSRFTokenRequired;
     
     var $clientSidePasswordHashing;
     
@@ -146,6 +150,7 @@ class FGMembersite {
     function FGMembersite()
     {
         $this->newIterations = 100000;
+        $this->sessionLifeTime = 1800;
     }
     
     function SetRandomKey($randkey)
@@ -171,6 +176,10 @@ class FGMembersite {
         $this->sitename = $sitename;
     }
     
+    function SetSessionLifetimeInMinutes($minutes) {
+        $this->sessionLifeTime = $minutes * 60;
+    }
+    
     function EnablePasswordRequiredForAdministration($do)
     {
         $this->passwordRequiredForAdministration = $do;
@@ -185,6 +194,12 @@ class FGMembersite {
         if ($do) {
             $this->EnsureBrowserTable();
         }
+    }
+    
+    
+    function EnableCSRFTokenRequired($do)
+    {
+        $this->CSRFTokenRequired = $do;
     }
     
     function EnableClientSidePasswordHashing($do) {
@@ -408,7 +423,10 @@ class FGMembersite {
 
         $email = SanitizeEmail($_POST['email']);
 
-        if(!$this->ChangeConfirmCodeInDB($email)) {
+        $confirmcode = $this->ChangeConfirmCodeInDB($email)
+        
+        if(false === $confirmcode) {
+           $this->HandleError("We were unable to update your confirm code in the database, perhaps try your request again.");
            return false;
         }
         
@@ -466,6 +484,7 @@ class FGMembersite {
         
         if(false === $email)
         {
+            // the previous method provides its own errors
             return false;
         }
         $email = SanitizeEmail($email);
@@ -481,6 +500,7 @@ class FGMembersite {
             
         $username = $this->GetUsernameFromEmail($email);
 
+        // this two element array is what is needed to set the browser verification cookie in the user's browser
         $returning['code'] = $verificationCode;
         $returning['username'] = $username;
 
@@ -493,6 +513,7 @@ class FGMembersite {
         $username = $this->GetUsernameFromEmail($email);
         if(false === $username)
         {
+            $this->HandleError("Unable to match email address to username");
             return false;
         }
     
@@ -529,11 +550,13 @@ class FGMembersite {
         
         if(false === $username)
         {
+            // not critical
             return false;
         }
     
         if(empty($this->admin_email))
         {
+            error_log("There is no admin_email value set");
             return false;
         }
         
@@ -552,6 +575,7 @@ class FGMembersite {
         
         if(!$mailer->Send())
         {
+            error_log("Unable to send an email.");
             return false;
         }
         
@@ -581,6 +605,8 @@ class FGMembersite {
             session_set_cookie_params(3600,'/','',true,true); // make it expire after 1 hour
         }
         
+        // If we are in two-factor mode we must identify a cookie named BrowserValidationUsername
+        // If the user is loggin in with their email address we must first figure out what their username is
         if ($this->twoFactorAuthMode) {
             if ($_POST['username'] == SanitizeUsername($_POST['username'])) {
                 $BVname = 'BrowserValidation'.SanitizeUsername($_POST['username']);
@@ -596,6 +622,7 @@ class FGMembersite {
             $BVvalue = '';
         }
 
+        // Note that we have not sanitized their username, this is to allow them to login with their email address
         if(!$this->CheckLoginInDB($_POST['username'],$_POST['password'],SanitizeHex($BVvalue)))
         {
             http_response_code(400);
@@ -612,34 +639,41 @@ class FGMembersite {
     
     function CheckLogin()
     {
+        // Check that they at least have a session, and if not, create it
         if(!isset($_SESSION)){ 
             session_start(); 
             session_set_cookie_params(3600,'/','',true,true); // make it expire after 1 hour
         }
         
-        if (!isset($_SESSION['CSRFtoken'])) {
-            $token = hash("sha512",mt_rand(0,mt_getrandmax()));
-            $_SESSION['CSRFtoken'] = $token;
+        // If they do not have a CSRF token, set that too; if we are requiring them.
+        if ($CSRFTokenRequired) {
+            if (!isset($_SESSION['CSRFtoken'])) {
+                $token = hash("sha512",mt_rand(0,mt_getrandmax()));
+                $_SESSION['CSRFtoken'] = $token;
+            }
         }
-         
+        
+        // This would mean that they are not logged in, as we set this when a user logs in
         if(empty($_SESSION['username']))
         {
             http_response_code(401);
             return false;
         }
-         
-        if (isset($_SESSION['LAST_ACTIVITY']) && (time() - $_SESSION['LAST_ACTIVITY'] > 1800)) {
-            /* last request was more than 30 minutes ago*/
+        
+        // They were properly logged in, but that was too long ago (sessionLifeTime) so they need to login again
+        if (isset($_SESSION['LAST_ACTIVITY']) && (time() - $_SESSION['LAST_ACTIVITY'] > $this->$sessionLifeTime)) {
+            /* last request was more than sessionLifeTime ago*/
             session_destroy(); // destroy session data in storage
             http_response_code(401);
             return false;
         }
         
+        // They are properly logged in, so let's update their session timers as appropriate.
         $_SESSION['LAST_ACTIVITY'] = time(); // update last activity time stamp
         if (!isset($_SESSION['CREATED'])) {
             $_SESSION['CREATED'] = time();
-        } else if (time() - $_SESSION['CREATED'] > 1800) {
-            /* session started more than 30 minutes ago*/
+        } else if (time() - $_SESSION['CREATED'] > $this->$sessionLifeTime) {
+            /* session started more than sessionLifeTime ago*/
             session_regenerate_id(true); // change session ID for the current session and invalidate old session ID
             $_SESSION['CREATED'] = time(); // update creation time
         }
@@ -648,11 +682,13 @@ class FGMembersite {
     }
     
     function ConfirmCSRFToken() {
-        if (($_SESSION['CSRFtoken'] == SanitizeHex($_POST['CSRFtoken']) || $_SESSION['CSRFtoken'] == SanitizeHex($_GET['CSRFtoken']))) {
-            return true;
-        } else {
-            $this->HandleError("Could not confirm Cross-Site Request Forgery token. Access denied.");
-            return false;
+        if ($CSRFTokenRequired) {
+            if (($_SESSION['CSRFtoken'] == SanitizeHex($_POST['CSRFtoken']) || $_SESSION['CSRFtoken'] == SanitizeHex($_GET['CSRFtoken']))) {
+                return true;
+            } else {
+                $this->HandleError("Could not confirm Cross-Site Request Forgery token. Access denied.");
+                return false;
+            }
         }
     }
     
@@ -708,7 +744,9 @@ class FGMembersite {
             return true;
         }
         
-        if(!$this->ChangeConfirmCodeInDB($email)) {
+        $confirmcode = $this->ChangeConfirmCodeInDB($email)
+        
+        if(false === $confirmcode) {
             $this->HandleError("Sorry, something went wrong on our end.");
             return false;
         }
@@ -780,11 +818,13 @@ class FGMembersite {
             return false;
         }        
         
+        // BUG: I'm not sure this would work; if the boolean value false was returned, would it still be the boolean value false after being Sanitized?
         $username = SanitizeUsername($this->GetUsernameFromEmail($email));
         
         if(false === $username)
         {
             error_log("why did we generate a password reset code for a non-existent or non-mapped email address: ".$email);
+            // This is very strange, so do not let the visitor know anything is wrong; it is unlikely they are one of our users
             return true;
         }
         
@@ -859,10 +899,12 @@ class FGMembersite {
             }
         } else {
             if (!$this->ConfirmCSRFToken()) {
+                // previous method provides its own error
                 return false;
             }
         }
         
+        // Request has been authenticated, proceed.
         $newpwd = $_POST['newpwd'];
         
         if(!$this->ChangePasswordInDB($_SESSION['username'], $newpwd))
@@ -909,10 +951,12 @@ class FGMembersite {
             }
         } else {
             if (!$this->ConfirmCSRFToken()) {
+                // previous method provides its own error
                 return false;
             }
         }
         
+        // Request has been authenticated, proceed.
         $newemail = SanitizeEmail(trim($_POST['newemail']));
         if($newemail != trim($_POST['newemail'])) {
             $this->HandleError("Your password includes illegal special characters.");
@@ -955,16 +999,20 @@ class FGMembersite {
             }
         } else {
             if (!$this->ConfirmCSRFToken()) {
+                // previous method provides its own error
                 return false;
             }
         }
         
+        // Request has been authenticated, proceed.
         $newname = SanitizeNonNumericText(trim($_POST['newname']));
+        // Removing the "Real Name" value is a valid request
         if(empty($_POST['newname'])) {
             $newname = "";
         }
         if(!$this->ChangeNameInDB(SanitizeUsername($_SESSION['username']), $newname))
         {
+            // previous method provides its own error
             return false;
         }
     
@@ -1066,6 +1114,7 @@ class FGMembersite {
     // 3.2 MySQL Helpers
     function DBLogin()
     {
+        // The below commeted function can be very useful for odd DB errors, it inidicates which function tried to login to the Database and writes it to the log
         // error_log(debug_backtrace()[2]["function"]);
         if(!isset($connection) || !mysqli_ping($connection)) {
             $connection = mysqli_connect($this->db_host,$this->username,$this->pwd, $this->database);
@@ -1267,6 +1316,7 @@ class FGMembersite {
                 "price DECIMAL(8,2) ,".
                 "date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ,".
                 "paid TINYINT( 1 ) NOT NULL DEFAULT 0 ,".
+                "paymentId VARCHAR(40) NULL,".
                 "CONSTRAINT FOREIGN KEY (id_user) REFERENCES registeredUsers (id_user) ,".
                 "PRIMARY KEY (skey) ".
                 ")"))
@@ -1287,6 +1337,8 @@ class FGMembersite {
         return true;
     }
     
+    // This function only works with preconfigured fields in the database.
+    // This limitation is due to the inability to set column names in prepared statements with PHP's mysqli
     function IsFieldUnique($column,$content)
     {
     
@@ -1371,12 +1423,14 @@ class FGMembersite {
             return false;
         }
     
+        // do not allow duplicate confirmcodes
         while (!isset($confirmcode) || !$this->IsFieldUnique('confirmcode', $confirmcode)) {
             $confirmcode = SanitizeHex(substr(bin2hex(mcrypt_create_iv(8, MCRYPT_DEV_URANDOM)), -8));
         }
         
         $formvars['confirmcode'] = $confirmcode;
         
+        // do not allow duplicate salts
         while (!isset($salt) || !$this->IsFieldUnique('salt', $salt)) {
            $salt = bin2hex(mcrypt_create_iv(16, MCRYPT_DEV_URANDOM));
         }
@@ -1457,7 +1511,7 @@ class FGMembersite {
 
         if($stmt = $connection->prepare("Insert into registeredBrowsers (active, secret, id_user, ip_address, platform, email) values (1,?,?,?,?,?)"))
         {
-            $stmt->bind_param("sisss", $secret, $id_user, SanitizeFloat($IP), SanitizeBrowserName($description), SanitizeEmail($email));
+            $stmt->bind_param("sisss", SanitizeHex($secret), SanitizeInteger($id_user), SanitizeFloat($IP), SanitizeBrowserName($description), SanitizeEmail($email));
             if (!$stmt->execute())
             {
                 $this->HandleDBError("Error updating database with new browser registration :" . $stmt->errno . ") " . $stmt->error);
@@ -1481,6 +1535,7 @@ class FGMembersite {
             $this->HandleError("Database login failed!");
             return false;
         }
+        
         $BVname = 'BrowserValidation'.SanitizeUsername($_SESSION['username']);
 
         if($stmt = $connection->prepare("Update registeredBrowsers set active='0', disabled_by=? where id_browser=?")){
@@ -1497,6 +1552,7 @@ class FGMembersite {
         return true;
     }
     
+    // This function veririfes that the confirmcode is good, resets it to 'y', and returns results with a boolean
     function UpdateDBRecForConfirmation($confirmcode)
     {
         $connection = $this->DBLogin();
@@ -1563,11 +1619,7 @@ class FGMembersite {
             $stmt->close();
         }
         
-        if(false === $this->ChangePasswordInDB($username,$newpassword))
-        {
-            return false;
-        }
-        return true;
+        return $this->ChangePasswordInDB($username,$newpassword);
     }
     
     function ChangePasswordInDB($username, $newpwd)
@@ -1587,9 +1639,9 @@ class FGMembersite {
         }
         
         $protected_password = hash_pbkdf2("sha512", $newpwd, $salt, $this->newIterations, 80);
-        if($stmt = $connection->prepare("Update registeredUsers set password=? where username=?"))
+        if($stmt = $connection->prepare("Update registeredUsers set password=?, salt=?, iterations=? where username=?"))
         {
-            $stmt->bind_param("ss", $protected_password, $username);
+            $stmt->bind_param("ssis", SanitizeHex($protected_password), SanitizeHex($salt), SanitizeInteger($this->newIterations), SanitizeUsername($username));
             if (!$stmt->execute())
             {
                 $this->HandleDBError("Error updating the password :" . $stmt->errno . ") " . $stmt->error);
@@ -1597,21 +1649,6 @@ class FGMembersite {
                 return false;
             }
             $stmt->close();
-            if($stmt = $connection->prepare("Update registeredUsers set salt=?, iterations=? where username=?"))
-            {
-                $stmt->bind_param("sis", $salt, $this->newIterations, $username);
-                if (!$stmt->execute())
-                {
-                    $this->HandleDBError("Error updating the password :" . $stmt->errno . ") " . $stmt->error);
-                    mysqli_close($connection);
-                    return false;
-                }
-                $stmt->close();
-            } else
-            {
-                mysqli_close($connection);
-                return false;
-            }
         } else
         {
             mysqli_close($connection);
@@ -1621,6 +1658,7 @@ class FGMembersite {
         return true;
     }
     
+    // function returns confirmcode or boolean false if failure; this function only allows a 2 hour window for confirmation by user
     function ChangeConfirmCodeInDB($email)
     {
         $connection = $this->DBLogin();
@@ -1630,11 +1668,12 @@ class FGMembersite {
             return false;
         }
 
+        // do not duplicate a confirmcode
         while (!isset($confirmcode) || !$this->IsFieldUnique('confirmcode', $confirmcode)) {
             $confirmcode = SanitizeHex(substr(bin2hex(mcrypt_create_iv(8, MCRYPT_DEV_URANDOM)), -8));
         }
         
-        if($stmt = $connection->prepare("Update registeredUsers set confirmcode=?, confirmtime =? where email=?"))
+        if($stmt = $connection->prepare("Update registeredUsers set confirmcode=?, confirmtime=? where email=?"))
         {
             $stmt->bind_param("sss", SanitizeHex($confirmcode), date("Y:m:d H:i:s", strtotime("+2 hour")), SanitizeEmail($email));
             if (!$stmt->execute())
@@ -1650,7 +1689,7 @@ class FGMembersite {
             return false;
         }
         mysqli_close($connection);
-        return true;
+        return $confirmcode;
     }
     
     function ChangeEmailInDB($username, $email)
@@ -1752,7 +1791,6 @@ class FGMembersite {
             mysqli_close($connection);
             return false;
         }
-        setcookie("view", "manageAccount", time()+300);
         mysqli_close($connection);
         return true;
     }
@@ -1792,9 +1830,11 @@ class FGMembersite {
     
     function CheckLoginInDB($username,$password,$browserverification)
     {
-        if (!($_SESSION['CSRFtoken'] == SanitizeHex($_POST['CSRFtoken']) || $_SESSION['CSRFtoken'] == SanitizeHex($_GET['CSRFtoken']))) {
-            $this->HandleError("Could not confirm Cross-Site Request Forgery token. Access denied.");
-            return false;
+        if ($CSRFTokenRequired) {
+            if (!($_SESSION['CSRFtoken'] == SanitizeHex($_POST['CSRFtoken']) || $_SESSION['CSRFtoken'] == SanitizeHex($_GET['CSRFtoken']))) {
+                $this->HandleError("Could not confirm Cross-Site Request Forgery token. Access denied.");
+                return false;
+            }
         }
         
         $connection = $this->DBLogin();
@@ -1804,6 +1844,7 @@ class FGMembersite {
             return false;
         }           
         
+        // These two steps attempt to identify which user is logging in, first by username and then by email address
         if($stmt = $connection->prepare("Select salt, iterations from registeredUsers where username=?")){
             $stmt->bind_param("s", SanitizeUsername($username));
             $stmt->execute();
@@ -1823,6 +1864,7 @@ class FGMembersite {
             }
         }
         
+        // neither worked, so this is not a registered user
         if(!$salt || !$iterations)
         {
             $this->HandleError("Error logging in. Username does not exist.");
@@ -1830,8 +1872,10 @@ class FGMembersite {
             return false;
         }
         
+        // Ok, we know the username now and should sanitize it for further use
         $username = SanitizeUsername($username);
         
+        // This is the only place the user-provided password string is used, which is why why both did not want to sanitize it, and did not need to for the security of the site
         $pwdhash = SanitizeHex(hash_pbkdf2("sha512", $password, $salt, $iterations, 80));
 
         if($stmt = $connection->prepare("Select name, email, id_user, message, adminMessage, paymentProblem, credit from registeredUsers where username=? and password=?")) {
@@ -1848,6 +1892,7 @@ class FGMembersite {
             return false;
         }
 
+        // twoFactorAuthMode requires the user to login with a registeredBrowser. Without twoFactorAuthMode we are just checking that the user has confirmed their email address.
         if ($this->twoFactorAuthMode) {
             if($stmt = $connection->prepare("Select id_user, id_browser from registeredBrowsers where secret=? AND id_user=? AND active='1'")){
                 $stmt->bind_param("si", SanitizeHex($browserverification), SanitizeInteger($id_user));
@@ -1887,6 +1932,7 @@ class FGMembersite {
             return false;
         }
 
+        // let's reset messages for this user; they have been collected for serving
         if($stmt = $connection->prepare("Update registeredUsers set message=NULL, adminMessage=NULL where username=? and password=?")){
             $stmt->bind_param("ss", SanitizeUsername($username), SanitizeHex($pwdhash));
             if (!$stmt->execute()) {
@@ -1904,13 +1950,14 @@ class FGMembersite {
         }
         $_SESSION['credit'] = SanitizeFloat($credit);
 
+        // if we recorded a billing problem for the user that remains unresolved, let them know to fix it
         $_SESSION['problemBillingUser'] = ($paymentProblem == '1');
         if ($_SESSION['problemBillingUser'] === true) {
             $_SESSION["messageForUser"] = true;
             $_SESSION['message'] = SanitizeBrowserName("Your billing information is invalid, please update it.");
-            setcookie("view", "manageAccount", time()+300);
         }
 
+        // if there are messages for the user, set them in the session
         if (!empty($message)) {
             $_SESSION["messageForUser"] = true;
             $_SESSION['message'] = SanitizeBrowserName($message);
@@ -1986,6 +2033,7 @@ class FGMembersite {
         return SanitizeHex($csalt);
     }
 
+    // This method finds the client-side hashing salt for a user (by username) without unnecessarily sharing it with browsers not registered/trusted by that user.
     function GetSaltFromUsernamePublic($username, $browserverification)
     {
         $connection = $this->DBLogin();
@@ -2022,6 +2070,7 @@ class FGMembersite {
           
     }
 
+    // List all registered/trusted browsers for a user. Useful for providing an interface to selectively disable, or simply view, all registered browsers.
     function GetRegisteredBrowsersForCurrentUser()
     {
         $connection = $this->DBLogin();
@@ -2057,7 +2106,7 @@ class FGMembersite {
         return $known_browsers;
     }
 
-
+    
     function WhatWillNextUserIdBe() 
     {
         $connection = $this->DBLogin();
@@ -2068,7 +2117,7 @@ class FGMembersite {
         } else {
             if($stmt = $connection->prepare("select max(id_user) from registeredUsers;")) {
                 if (!$stmt->execute()) {
-                        // not sure what to do here; not exactly good but not critical either
+                        $this->HandleDBError("Unable to execute query for determining max id_user");
                 }
                 $stmt->bind_result($num);
                 $stmt->fetch();
@@ -2127,6 +2176,8 @@ class FGMembersite {
     function billUser($username, $reason, $price) {
         error_log("Billing ".$username." $".$price." for ".$reason);        
         $_SESSION['hasPurchasedThisSession'] = true;
+        
+        // A fourth parameter indicates we are paying the balance on an existing, unpaid transaction
         if (func_num_args() > 3) {
             $transactionId = func_get_arg(3);
         } else {
@@ -2140,6 +2191,7 @@ class FGMembersite {
             $credit = SanitizeFloat($_SESSION['credit']);
             $price = SanitizeFloat($price);
             $billUserAmount = $price;
+            // You may have given this user some credit; if so, consume that credit first
             if ($credit >= 0) {
                 if ($credit - $price > 0) {
                     $billUserAmount = 0;
@@ -2151,12 +2203,15 @@ class FGMembersite {
                     $credit = $credit - ($price - $billUserAmount);
                     $_SESSION['credit'] = $credit;
                     // This is where you implement your actual billing function
+                    // This will often return an unique paymentId from your payment processor
                     //$transactionResult = someAction();
                 }
             } else {
                 // This is where you implement your actual billing function
+                // This will often return an unique paymentId from your payment processor
                 //$transactionResult = someAction();
             }
+            
             if ($transactionResult !== false) { // success
                 $this->markTransactionPaid($transactionId, $transactionResult);
                 $connection = $this->DBLogin();
@@ -2164,6 +2219,7 @@ class FGMembersite {
                 {
                     $this->HandleError("Database login failed!");
                 } else {
+                    // Let's update the user's totalSpending, so we can easily see who our best customers are
                     if($stmt = $connection->prepare("Select totalSpending from registeredUsers where username=?")) {
                         $stmt->bind_param("s", SanitizeUsername($username));
                         $stmt->execute();
@@ -2198,6 +2254,7 @@ class FGMembersite {
 
     // 3.5 Transaction Loggers
 
+    // Create an unpaid transaction
     function createTransaction($reason, $price) {
 
         $connection = $this->DBLogin();
@@ -2206,7 +2263,7 @@ class FGMembersite {
            $this->HandleError("Database login failed!");
             return false;
         } else {
-            if($stmt = $connection->prepare("INSERT INTO transactions (id_user, reason, price) values (?,?,?,?)")) {
+            if($stmt = $connection->prepare("INSERT INTO transactions (id_user, reason, price) values (?,?,?)")) {
                 $stmt->bind_param("isd", SanitizeInteger($_SESSION['userID']), SanitizeNonNumericText($reason), SanitizeFloat($price));
                 if (!$stmt->execute()) {
                     return false;
@@ -2220,7 +2277,9 @@ class FGMembersite {
         }
     }
     
+    // Mark an existing transaction as having been paid
     function markTransactionPaid($transactionId, $transactionResult) {
+        // remember that $transactionResult is often a unique ID from your payment processor
         $connection = $this->DBLogin();
         if(!$connection)
         {

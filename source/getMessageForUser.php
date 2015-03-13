@@ -12,6 +12,6 @@ if($_SESSION["messageForUser"]) {
 	$_SESSION["messageForUser"] = false;
 } else if($_SESSION["adminMessageForUser"]){
 	print $_SESSION["adminMessage"];
-        $_SESSION["adminMessageForUser"] = false;
+    $_SESSION["adminMessageForUser"] = false;
 }
 ?>

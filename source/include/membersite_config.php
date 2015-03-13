@@ -3,7 +3,7 @@ require_once("./include/fg_membersite.php");
 
 $fgmembersite = new FGMembersite();
 
-//Provide your site name here
+//Provide an addressable URL for your site here (try copying and pasting it into your web browser and it should take you to your site)
 $fgmembersite->SetWebsiteName('user11.com');
 
 //Provide the email address where you want to get notifications
@@ -20,9 +20,15 @@ $fgmembersite->InitDB(/*hostname*/'p:localhost',
 
 $today = getdate();                      
 $fgmembersite->SetRandomKey(md5($today[year].$today[yday]));                      
+
+//How long should sessions stay valid for (in minutes)?
+$fgmembersite->SetSessionLifetimeInMinutes(30);
                       
 //Do you want to require additional verification (password, and browser verification if using two-factor authentication) for account administration?
-$fgmembersite->EnablePasswordRequiredForAdministration(true);                      
+$fgmembersite->EnablePasswordRequiredForAdministration(true);   
+
+//Do you want to prevent Cross-Site Request Forgery by requiring CSRF tokens to authenticate requests?
+$fgmembersite->EnableCSRFTokenRequired(true);                 
                       
 //Do you want to enable two-factor authentication mode?  
 $fgmembersite->EnableTwoFactorAuthenticationMode(false);
