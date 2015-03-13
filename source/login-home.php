@@ -29,5 +29,13 @@ Welcome back <?= $fgmembersite->UserFullName(); ?>!
 <br><br><br>
 <p><a href='logout.php'>Logout</a></p>
 </div>
+
+<script>
+    getWithAjax('getMessageForUser.php' function (response) {
+        if (response.length > 0) {
+            alert(response);
+        }
+    });
+</script>
 </body>
 </html>
