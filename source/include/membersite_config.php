@@ -18,6 +18,7 @@ $fgmembersite->InitDB(/*hostname*/'p:localhost',
                       /*password*/'p',
                       /*database name*/'testdb');
 
+//This is a compromise between entirely static values and randomly generated ones that the nature of PHP has a hard time with.
 $today = getdate();                      
 $fgmembersite->SetRandomKey(md5($today[year].$today[yday]));                      
 

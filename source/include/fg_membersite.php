@@ -1067,7 +1067,7 @@ class FGMembersite {
     
     function GetSpamTrapInputName()
     {
-        return 'sp'.md5('KHGdnbvsgst'.$this->rand_key);
+        return 'sp'.sha1('KHGdnbvsgst'.$this->rand_key);
     }
     
     function GetErrorMessage()
