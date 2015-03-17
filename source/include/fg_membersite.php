@@ -40,6 +40,7 @@ http://www.html-form-guide.com/php-form/php-registration-form.html http://www.ht
             1.3.1 Login()
             1.3.2 CheckLogin()
             1.3.3 ConfirmCSRFToken()
+            1.3.4 AuthenticateRequest()
         1.4 Logging out a user
             1.4.1 LogOut()
         1.5 Getting Session Variables // Likely unused, they're in $_SESSION after all 
@@ -423,7 +424,7 @@ class FGMembersite {
 
         $email = SanitizeEmail($_POST['email']);
 
-        $confirmcode = $this->ChangeConfirmCodeInDB($email)
+        $confirmcode = $this->ChangeConfirmCodeInDB($email);
         
         if(false === $confirmcode) {
            $this->HandleError("We were unable to update your confirm code in the database, perhaps try your request again.");
@@ -646,7 +647,7 @@ class FGMembersite {
         }
         
         // If they do not have a CSRF token, set that too; if we are requiring them.
-        if ($CSRFTokenRequired) {
+        if ($this->CSRFTokenRequired) {
             if (!isset($_SESSION['CSRFtoken'])) {
                 $token = hash("sha512",mt_rand(0,mt_getrandmax()));
                 $_SESSION['CSRFtoken'] = $token;
@@ -661,7 +662,7 @@ class FGMembersite {
         }
         
         // They were properly logged in, but that was too long ago (sessionLifeTime) so they need to login again
-        if (isset($_SESSION['LAST_ACTIVITY']) && (time() - $_SESSION['LAST_ACTIVITY'] > $this->$sessionLifeTime)) {
+        if (isset($_SESSION['LAST_ACTIVITY']) && (time() - $_SESSION['LAST_ACTIVITY'] > $this->sessionLifeTime)) {
             /* last request was more than sessionLifeTime ago*/
             session_destroy(); // destroy session data in storage
             http_response_code(401);
@@ -672,7 +673,7 @@ class FGMembersite {
         $_SESSION['LAST_ACTIVITY'] = time(); // update last activity time stamp
         if (!isset($_SESSION['CREATED'])) {
             $_SESSION['CREATED'] = time();
-        } else if (time() - $_SESSION['CREATED'] > $this->$sessionLifeTime) {
+        } else if (time() - $_SESSION['CREATED'] > $this->sessionLifeTime) {
             /* session started more than sessionLifeTime ago*/
             session_regenerate_id(true); // change session ID for the current session and invalidate old session ID
             $_SESSION['CREATED'] = time(); // update creation time
@@ -682,7 +683,7 @@ class FGMembersite {
     }
     
     function ConfirmCSRFToken() {
-        if ($CSRFTokenRequired) {
+        if ($this->CSRFTokenRequired) {
             if (($_SESSION['CSRFtoken'] == SanitizeHex($_POST['CSRFtoken']) || $_SESSION['CSRFtoken'] == SanitizeHex($_GET['CSRFtoken']))) {
                 return true;
             } else {
@@ -690,6 +691,33 @@ class FGMembersite {
                 return false;
             }
         }
+    }
+    
+    function AuthenticateRequest() {
+        if ($this->CheckLogin() === false) {
+            $this->HandleError("You are not logged-in.");
+            return false;
+        }
+        
+        if ($this->twoFactorAuthMode) {
+            $BVname = 'BrowserValidation'.SanitizeUsername($_SESSION['username']);
+            $BVvalue = $_COOKIE[$BVname];
+        } else {
+            $BVvalue = '';
+        }
+        
+        if ($this->passwordRequiredForAdministration) {
+            if (!$this->CheckLoginInDB(SanitizeUsername($_SESSION['username']), $_POST['pwd'], SanitizeHex($BVvalue))) {
+                $this->HandleError("The password provided did not validate!");
+                return false;
+            }
+        } else {
+            if ($this->ConfirmCSRFToken() === false) {
+                // previous method provides its own error
+                return false;
+            }
+        }
+        return true;
     }
     
     // End Logging on a User
@@ -744,7 +772,7 @@ class FGMembersite {
             return true;
         }
         
-        $confirmcode = $this->ChangeConfirmCodeInDB($email)
+        $confirmcode = $this->ChangeConfirmCodeInDB($email);
         
         if(false === $confirmcode) {
             $this->HandleError("Sorry, something went wrong on our end.");
@@ -885,23 +913,9 @@ class FGMembersite {
             return false;
         }
         
-        if ($this->twoFactorAuthMode) {
-            $BVname = 'BrowserValidation'.SanitizeUsername($_SESSION['username']);
-            $BVvalue = $_COOKIE[$BVname];
-        } else {
-            $BVvalue = '';
-        }
-        
-        if ($this->passwordRequiredForAdministration) {
-            if (!$this->CheckLoginInDB(SanitizeUsername($_SESSION['username']), $_POST['pwd'], SanitizeHex($BVvalue))) {
-                $this->HandleError("The old password did not validate!");
-                return false;
-            }
-        } else {
-            if (!$this->ConfirmCSRFToken()) {
-                // previous method provides its own error
-                return false;
-            }
+        if ($this->AuthenticateRequest() === false) {
+            // previous method provides its own error
+            return false;
         }
         
         // Request has been authenticated, proceed.
@@ -937,23 +951,9 @@ class FGMembersite {
             return false;
         }
         
-        if ($this->twoFactorAuthMode) {
-            $BVname = 'BrowserValidation'.SanitizeUsername($_SESSION['username']);
-            $BVvalue = $_COOKIE[$BVname];
-        } else {
-            $BVvalue = '';
-        }
-        
-        if ($this->passwordRequiredForAdministration) {
-            if (!$this->CheckLoginInDB(SanitizeUsername($_SESSION['username']), $_POST['pwd'], SanitizeHex($BVvalue))) {
-                $this->HandleError("The password provided did not validate!");
-                return false;
-            }
-        } else {
-            if (!$this->ConfirmCSRFToken()) {
-                // previous method provides its own error
-                return false;
-            }
+        if ($this->AuthenticateRequest() === false) {
+            // previous method provides its own error
+            return false;
         }
         
         // Request has been authenticated, proceed.
@@ -985,23 +985,9 @@ class FGMembersite {
             return false;
         }
         
-        if ($this->twoFactorAuthMode) {
-            $BVname = 'BrowserValidation'.SanitizeUsername($_SESSION['username']);
-            $BVvalue = $_COOKIE[$BVname];
-        } else {
-            $BVvalue = '';
-        }
-        
-        if ($this->passwordRequiredForAdministration) {
-            if (!$this->CheckLoginInDB(SanitizeUsername($_SESSION['username']), $_POST['pwd'], SanitizeHex($BVvalue))) {
-                $this->HandleError("The password provided did not validate!");
-                return false;
-            }
-        } else {
-            if (!$this->ConfirmCSRFToken()) {
-                // previous method provides its own error
-                return false;
-            }
+        if ($this->AuthenticateRequest() === false) {
+            // previous method provides its own error
+            return false;
         }
         
         // Request has been authenticated, proceed.
@@ -1552,7 +1538,7 @@ class FGMembersite {
         return true;
     }
     
-    // This function veririfes that the confirmcode is good, resets it to 'y', and returns results with a boolean
+    // This function veririfes that the confirmcode is good, resets it to 'y', and returns results with a boolean false or the email address of the user
     function UpdateDBRecForConfirmation($confirmcode)
     {
         $connection = $this->DBLogin();
@@ -1830,7 +1816,7 @@ class FGMembersite {
     
     function CheckLoginInDB($username,$password,$browserverification)
     {
-        if ($CSRFTokenRequired) {
+        if ($this->CSRFTokenRequired) {
             if (!($_SESSION['CSRFtoken'] == SanitizeHex($_POST['CSRFtoken']) || $_SESSION['CSRFtoken'] == SanitizeHex($_GET['CSRFtoken']))) {
                 $this->HandleError("Could not confirm Cross-Site Request Forgery token. Access denied.");
                 return false;
