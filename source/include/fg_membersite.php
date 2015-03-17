@@ -40,7 +40,7 @@ http://www.html-form-guide.com/php-form/php-registration-form.html http://www.ht
             1.3.1 Login()
             1.3.2 CheckLogin()
             1.3.3 ConfirmCSRFToken()
-            1.3.4 AuthenticateRequest()
+            1.3.4 AuthenticateChangeRequest()
         1.4 Logging out a user
             1.4.1 LogOut()
         1.5 Getting Session Variables // Likely unused, they're in $_SESSION after all 
@@ -196,7 +196,6 @@ class FGMembersite {
             $this->EnsureBrowserTable();
         }
     }
-    
     
     function EnableCSRFTokenRequired($do)
     {
@@ -693,7 +692,7 @@ class FGMembersite {
         }
     }
     
-    function AuthenticateRequest() {
+    function AuthenticateChangeRequest() {
         if ($this->CheckLogin() === false) {
             $this->HandleError("You are not logged-in.");
             return false;
@@ -901,7 +900,7 @@ class FGMembersite {
     
     function ChangePassword()
     {
-        if(!$this->CheckLogin())
+        if($this->CheckLogin() === false)
         {
             $this->HandleError("Not logged in!");
             return false;
@@ -913,7 +912,7 @@ class FGMembersite {
             return false;
         }
         
-        if ($this->AuthenticateRequest() === false) {
+        if ($this->AuthenticateChangeRequest() === false) {
             // previous method provides its own error
             return false;
         }
@@ -933,7 +932,7 @@ class FGMembersite {
     // 2.3 Changing an Email Address
     
     function ChangeEmailAddress() {
-        if(!$this->CheckLogin())
+        if($this->CheckLogin() === false)
         {
             $this->HandleError("Not logged in!");
             return false;
@@ -951,7 +950,7 @@ class FGMembersite {
             return false;
         }
         
-        if ($this->AuthenticateRequest() === false) {
+        if ($this->AuthenticateChangeRequest() === false) {
             // previous method provides its own error
             return false;
         }
@@ -979,13 +978,13 @@ class FGMembersite {
 
     function ChangeName() {
     
-        if(!$this->CheckLogin())
+        if($this->CheckLogin() === false)
         {
             $this->HandleError("Not logged in!");
             return false;
         }
         
-        if ($this->AuthenticateRequest() === false) {
+        if ($this->AuthenticateChangeRequest() === false) {
             // previous method provides its own error
             return false;
         }
@@ -1011,7 +1010,7 @@ class FGMembersite {
     // 2.5 Disabling a Browser
 
     function DisableBrowser() {
-        if(!$this->CheckLogin())
+        if($this->CheckLogin() === false)
         {
           $this->HandleError("Not logged in!");
             return false;
