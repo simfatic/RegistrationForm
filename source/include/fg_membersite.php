@@ -43,7 +43,7 @@ http://www.html-form-guide.com/php-form/php-registration-form.html http://www.ht
             1.3.4 AuthenticateChangeRequest()
         1.4 Logging out a user
             1.4.1 LogOut()
-        1.5 Getting Session Variables // Likely unused, they're in $_SESSION after all 
+        1.5 Getting Session Variables // Likely unused, they're in $_SESSION
             1.5.1 UserFullName()
             1.5.2 UserName()
             1.5.3 UserEmail()
@@ -52,8 +52,8 @@ http://www.html-form-guide.com/php-form/php-registration-form.html http://www.ht
             2.1.1 EmailResetPasswordLink()
             2.1.2 SendResetPasswordLink($email, $username)
             2.1.3 GetResetPasswordCode($email)
-            2.1.4 ResetPassword($email, $authcode, $newpassword, $confirmpassword, $csalt)
-            2.1.5 NotifyOfNewPassword($email, $username, $new_password) // This function is not called anywhere right now
+            2.1.4 ResetPassword($authcode, $newpassword, $confirmpassword, $csalt)
+            2.1.5 NotifyOfNewPassword($email, $username)
         2.2 Changing a Password
             2.2.1 ChangePassword()
         2.3 Changing an Email Address
@@ -99,10 +99,11 @@ http://www.html-form-guide.com/php-form/php-registration-form.html http://www.ht
             3.3.3 MySQL Selects
                 3.3.3.1 CheckLoginInDB($username,$password,$browserverification)
                 3.3.3.2 GetUsernameFromEmail($email)
-                3.3.3.3 GetSaltFromUsername($username)
-                3.3.3.4 GetSaltFromUsernamePublic($username, $browserverification)
-                3.3.3.6 GetRegisteredBrowsersForCurrentUser()
-                3.3.3.7 WhatWillNextUserIdBe()
+                3.3.3.4 GetEmailFromUsername($username)
+                3.3.3.5 GetSaltFromUsername($username)
+                3.3.3.6 GetSaltFromUsernamePublic($username, $browserverification)
+                3.3.3.7 GetRegisteredBrowsersForCurrentUser()
+                3.3.3.8 WhatWillNextUserIdBe()
         3.4 Billing Functions
             3.4.1 ValidateBillingInfo()
             3.4.2 billUser($username, $reason, $price)
@@ -601,8 +602,12 @@ class FGMembersite {
         } 
         
         if(!isset($_SESSION)) {
-            session_start();
             session_set_cookie_params(3600,'/','',true,true); // make it expire after 1 hour
+            session_start();
+            if ($this->CSRFTokenRequired) {
+                $token = hash("sha512",mt_rand(0,mt_getrandmax()));
+                $_POST['CSRFtoken'] = $_SESSION['CSRFtoken'] = $token;
+            }
         }
         
         // If we are in two-factor mode we must identify a cookie named BrowserValidationUsername
@@ -641,8 +646,8 @@ class FGMembersite {
     {
         // Check that they at least have a session, and if not, create it
         if(!isset($_SESSION)){ 
-            session_start(); 
             session_set_cookie_params(3600,'/','',true,true); // make it expire after 1 hour
+            session_start(); 
         }
         
         // If they do not have a CSRF token, set that too; if we are requiring them.
@@ -821,24 +826,17 @@ class FGMembersite {
         return true;
     }
     
-    function ResetPassword($email, $code, $newpassword, $csalt)
+    function ResetPassword($code, $newpassword, $csalt)
     {
-        if(empty($email))
-        {
-            $this->HandleError("Email is empty!");
-            return false;
-        }
-
         if(empty($code))
         {
             $this->HandleError("reset code is empty!");
             return false;
         }
 
-        $email = SanitizeEmail($email);
         $code = SanitizeHex($code);
 
-        $confirmedemail = $this->UpdateDBRecForConfirmation(SanitizeHex(strtolower($code)));
+        $confirmedemail = SanitizeEmail($this->UpdateDBRecForConfirmation(SanitizeHex(strtolower($code))));
         if(false === $confirmedemail)
         {
             $this->HandleError("bad reset code");
@@ -846,11 +844,11 @@ class FGMembersite {
         }        
         
         // BUG: I'm not sure this would work; if the boolean value false was returned, would it still be the boolean value false after being Sanitized?
-        $username = SanitizeUsername($this->GetUsernameFromEmail($email));
+        $username = SanitizeUsername($this->GetUsernameFromEmail($confirmedemail));
         
         if(false === $username)
         {
-            error_log("why did we generate a password reset code for a non-existent or non-mapped email address: ".$email);
+            error_log("why did we generate a password reset code for a non-existent or non-mapped email address: ".$confirmedemail);
             // This is very strange, so do not let the visitor know anything is wrong; it is unlikely they are one of our users
             return true;
         }
@@ -861,6 +859,8 @@ class FGMembersite {
             return false;
         }
         
+        $this->NotifyOfNewPassword($confirmedemail, $username);
+        
         return true;
     }
     
@@ -868,7 +868,6 @@ class FGMembersite {
     {
         $username = SanitizeUsername($username);
         $email = SanitizeEmail($email);
-        $new_password = SanitizeHex($new_password);
         
         $mailer = new PHPMailer();
         
@@ -924,6 +923,9 @@ class FGMembersite {
         {
             return false;
         }
+        
+        $this->NotifyOfNewPassword($this->GetEmailFromUsername($username), $username);
+        
         return true;
     }
     
@@ -1012,7 +1014,7 @@ class FGMembersite {
     function DisableBrowser() {
         if($this->CheckLogin() === false)
         {
-          $this->HandleError("Not logged in!");
+            $this->HandleError("Not logged in!");
             return false;
         }
         
@@ -1860,7 +1862,7 @@ class FGMembersite {
         // Ok, we know the username now and should sanitize it for further use
         $username = SanitizeUsername($username);
         
-        // This is the only place the user-provided password string is used, which is why why both did not want to sanitize it, and did not need to for the security of the site
+        // This is the only place the user-provided password string is used, which is why we both did not want to sanitize it, and did not need to for the security of the site
         $pwdhash = SanitizeHex(hash_pbkdf2("sha512", $password, $salt, $iterations, 80));
 
         if($stmt = $connection->prepare("Select name, email, id_user, message, adminMessage, paymentProblem, credit from registeredUsers where username=? and password=?")) {
@@ -1987,6 +1989,34 @@ class FGMembersite {
         
         mysqli_close($connection);
         return SanitizeUsername($username);
+    }
+    
+    function GetEmailFromUsername($username)
+    {
+        $connection = $this->DBLogin();
+        if(!$connection)
+        {
+            $this->HandleError("Database login failed!");
+            return false;
+        }   
+        
+        if($stmt = $connection->prepare("Select email from registeredUsers where username=?")){
+            $stmt->bind_param("s", SanitizeUsername($username));
+            $stmt->execute();
+            $stmt->bind_result($email);
+            $stmt->fetch();
+            $stmt->close();
+        }
+ 
+        if(!$email)
+        {
+            $this->HandleError("There is no user with username: ".$username);
+            mysqli_close($connection);
+            return false;
+        }
+        
+        mysqli_close($connection);
+        return SanitizeEmail($email);
     }
     
     function GetSaltFromUsername($username)

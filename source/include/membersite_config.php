@@ -20,7 +20,7 @@ $fgmembersite->InitDB(/*hostname*/'p:localhost',
 
 //This is a compromise between entirely static values and randomly generated ones that the nature of PHP has a hard time with.
 $today = getdate();                      
-$fgmembersite->SetRandomKey(md5($today[year].$today[yday]));                      
+$fgmembersite->SetRandomKey(md5($today["year"].$today["yday"]));                      
 
 //How long should sessions stay valid for (in minutes)?
 $fgmembersite->SetSessionLifetimeInMinutes(30);

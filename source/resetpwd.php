@@ -6,7 +6,7 @@ $success = false;
 if(isset($_POST['submitted']))
 {
 	$attemptedReset = true;
-	if($fgmembersite->ResetPassword(SanitizeEmail($_POST['email']), SanitizeHex($_POST['code']), $_POST['password'], SanitizeHex($_POST['confirmpassword']), SanitizeHex($_POST['salt'])))
+	if($fgmembersite->ResetPassword(SanitizeHex($_POST['code']), $_POST['password'], SanitizeHex($_POST['salt'])))
 	{
 	    $success=true;
 	} 
@@ -48,9 +48,6 @@ if(isset($_POST['submitted']))
 		</div>
 		<div style="display:none;">
                     <input type='password' name='code' id='code' value="<?php echo $_GET['code']?>"/>
-                </div>
-		<div style="display:none;">
-                    <input type='password' name='email' id='email' value="<?php echo $_GET['email']?>" />
                 </div>
 		<div style="display:none;">
                     <input type='password' name='submitted' id='submitted' value="true" />
