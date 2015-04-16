@@ -924,7 +924,7 @@ class FGMembersite {
             return false;
         }
         
-        $this->NotifyOfNewPassword($this->GetEmailFromUsername($username), $username);
+        $this->NotifyOfNewPassword($this->GetEmailFromUsername($_SESSION['username']), $_SESSION['username']);
         
         return true;
     }
