@@ -152,10 +152,11 @@ class FGMembersite
 
          $sessionvar = $this->GetLoginSessionVar();
          
-         if(empty($_SESSION[$sessionvar]))
-         {
+         if (empty($_SESSION['username']) || empty($_SESSION['email_of_user']) || empty($_SESSION['name_of_user']))
+        {
+            http_response_code(401);
             return false;
-         }
+        }
          return true;
     }
     
@@ -171,13 +172,12 @@ class FGMembersite
     
     function LogOut()
     {
+        if (!isset($_SESSION)) {
+        session_set_save_handler($encryptedhandler, true);
+
         session_start();
-        
-        $sessionvar = $this->GetLoginSessionVar();
-        
-        $_SESSION[$sessionvar]=NULL;
-        
-        unset($_SESSION[$sessionvar]);
+        }
+        session_destroy();
     }
     
     function EmailResetPasswordLink()
