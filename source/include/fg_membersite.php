@@ -473,7 +473,7 @@ class FGMembersite
         
         $mailer->CharSet = 'utf-8';
         
-        $mailer->AddAddress($user_rec['email'],$user_rec['name']);
+        $mailer->addAddress($user_rec['email'],$user_rec['name']);
         
         $mailer->Subject = "Welcome to ".$this->sitename;
 
@@ -504,7 +504,7 @@ class FGMembersite
         
         $mailer->CharSet = 'utf-8';
         
-        $mailer->AddAddress($this->admin_email);
+        $mailer->addAddress($this->admin_email);
         
         $mailer->Subject = "Registration Completed: ".$user_rec['name'];
 
@@ -534,7 +534,7 @@ class FGMembersite
         
         $mailer->CharSet = 'utf-8';
         
-        $mailer->AddAddress($email,$user_rec['name']);
+        $mailer->addAddress($email,$user_rec['name']);
         
         $mailer->Subject = "Your reset password request at ".$this->sitename;
 
@@ -567,7 +567,7 @@ class FGMembersite
         
         $mailer->CharSet = 'utf-8';
         
-        $mailer->AddAddress($email,$user_rec['name']);
+        $mailer->addAddress($email,$user_rec['name']);
         
         $mailer->Subject = "Your new password for ".$this->sitename;
 
@@ -639,7 +639,7 @@ class FGMembersite
         
         $mailer->CharSet = 'utf-8';
         
-        $mailer->AddAddress($formvars['email'],$formvars['name']);
+        $mailer->addAddress($formvars['email'],$formvars['name']);
         
         $mailer->Subject = "Your registration with ".$this->sitename;
 
@@ -691,7 +691,7 @@ class FGMembersite
         
         $mailer->CharSet = 'utf-8';
         
-        $mailer->AddAddress($this->admin_email);
+        $mailer->addAddress($this->admin_email);
         
         $mailer->Subject = "New registration: ".$formvars['name'];
 
